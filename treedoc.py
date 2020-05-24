@@ -25,8 +25,6 @@ class Node:
 	def query(self, n):
 		dfs(self)
 		# print "Query ", n, self.size
-		if(self.size == 0):
-			return self
 		if(n > self.size):
 			return None
 		def util(node, k, pos, ans):
@@ -36,8 +34,9 @@ class Node:
 					util(j, k, pos, ans)
 					if(len(ans) > 0):
 						return
-			k[0]+=1
-			# print k, pos, ans, node.value
+			if(len(node.value) > 0):
+				k[0]+=1
+			# print "Query util ", k, pos, ans, node.value
 			if(pos[0] == k[0]):
 				ans.append(node)
 				return
@@ -51,6 +50,7 @@ class Node:
 		k = [0]
 		ans = []
 		util(self, k, pos, ans)	
+		# print k, pos, ans[0].value
 		return ans[0]
 
 					
@@ -66,49 +66,31 @@ class Node:
 			atom, pos, siteId = i
 			d[pos].append(i)
 		for i in d:
-			f = self.query(i)
-			# print i,f.value, self.size
-			if(i  == 1):
-				for j in d[i]:
-					atom, insertPos, siteId = j	
-					f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
-				f.counter+=1
-			elif(i >= self.size):
-				for j in d[i]:
-					atom, insertPos, siteId = j	
-					f.adjacencyListRight[(1,(siteId, f.counter+1))] = Node(atom)
-				f.counter+=1
-			else:
-				b = None
-				b = self.query(insertPos-1)
-				f = self.query(insertPos)
-				if(f in b.adjacencyListRight.values()):
-					for j in d[i]:
-						atom, insertPos, siteId = j	
-						f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
-					f.counter+=1
-				elif(b in f.adjacencyListLeft.values()):
-					for j in d[i]:
-						atom, insertPos, siteId = j	
-						b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
-					b.counter+=1
-				else:
-					for j in d[i]:
-						atom, insertPos, siteId = j	
-						b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
-					b.counter+=1					
+			l = []
+			for j in d[i]:
+				atom, pos, S = j
+				l.append((S, pos, atom))
+			l.sort()
+			cnt = 0;
+			for j in l:
+				S, pos, atom = j
+				pos+=cnt
+				# print j, pos
+				self.insert(atom, pos, S)
+				cnt+=1
 
 		 
 	def insert(self, atom, insertPos, siteId):
 		if(atom == ""):
 			return -1
 		dfs(self)
+		# print "insert ", atom, insertPos, siteId,self.size
 		if(insertPos == 1):
 			f = self.query(insertPos)
 			f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
 			f.counter += 1
 		elif(insertPos >= self.size):
-			f = self.query(self.size)				
+			f = self.query(self.size)		
 			f.adjacencyListRight[(1,(siteId, f.counter+1))] = Node(atom)
 			f.counter += 1
 		else:
@@ -170,14 +152,12 @@ class Node:
 		fill(self, atomstring, ptr)
 
 def main():
-	crdt = Node("")
+	crdt = Node("_")
 	crdt.insert("hi",1,1)
-	crdt.insert("! ",2,2)
+	crdt.insert("!",2,2)
 	crdt.insert("how are you",3,1)
-	crdt.delete(2,2)
-	# s = crdt.flatten()
-	# print s
-	conccurentQueries = [["this assignment", 2, 1],["was fun", 2, 2]]
+	crdt.delete(3,2)
+	conccurentQueries = [["this assignment", 3, 1],["was fun", 3, 2]]
 	crdt.conccurentInsert(conccurentQueries)
 	s = crdt.flatten()
 	print s
