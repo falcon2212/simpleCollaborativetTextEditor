@@ -66,45 +66,37 @@ class Node:
 			atom, pos, siteId = i
 			d[pos].append(i)
 		for i in d:
-			l = []
-			for j in d[i]:
-				atom, pos, siteId = j
-				l.append((siteId, pos, atom))
-			l.sort()
-			for j in l:
-				siteId, pos, atom = j
-				self.insert(atom, pos, siteId)	
-			# f = self.query(i)
+			f = self.query(i)
 			# print i,f.value, self.size
-			# if(i  == 1):
-			# 	for j in d[i]:
-			# 		atom, insertPos, siteId = j	
-			# 		f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
-			# 	f.counter+=1
-			# elif(i >= self.size):
-			# 	for j in d[i]:
-			# 		atom, insertPos, siteId = j	
-			# 		f.adjacencyListRight[(1,(siteId, f.counter+1))] = Node(atom)
-			# 	f.counter+=1
-			# else:
-			# 	b = None
-			# 	b = self.query(insertPos-1)
-			# 	f = self.query(insertPos)
-			# 	if(f in b.adjacencyListRight.values()):
-			# 		for j in d[i]:
-			# 			atom, insertPos, siteId = j	
-			# 			f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
-			# 		f.counter+=1
-			# 	elif(b in f.adjacencyListLeft.values()):
-			# 		for j in d[i]:
-			# 			atom, insertPos, siteId = j	
-			# 			b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
-			# 		b.counter+=1
-			# 	else:
-			# 		for j in d[i]:
-			# 			atom, insertPos, siteId = j	
-			# 			b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
-			# 		b.counter+=1					
+			if(i  == 1):
+				for j in d[i]:
+					atom, insertPos, siteId = j	
+					f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
+				f.counter+=1
+			elif(i >= self.size):
+				for j in d[i]:
+					atom, insertPos, siteId = j	
+					f.adjacencyListRight[(1,(siteId, f.counter+1))] = Node(atom)
+				f.counter+=1
+			else:
+				b = None
+				b = self.query(insertPos-1)
+				f = self.query(insertPos)
+				if(f in b.adjacencyListRight.values()):
+					for j in d[i]:
+						atom, insertPos, siteId = j	
+						f.adjacencyListLeft[(0,(siteId, f.counter+1))] = Node(atom)
+					f.counter+=1
+				elif(b in f.adjacencyListLeft.values()):
+					for j in d[i]:
+						atom, insertPos, siteId = j	
+						b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
+					b.counter+=1
+				else:
+					for j in d[i]:
+						atom, insertPos, siteId = j	
+						b.adjacencyListRight[(1, (siteId, b.counter+1))] = Node(atom)
+					b.counter+=1					
 
 		 
 	def insert(self, atom, insertPos, siteId):
@@ -182,9 +174,10 @@ def main():
 	crdt.insert("hi",1,1)
 	crdt.insert("! ",2,2)
 	crdt.insert("how are you",3,1)
-	s = crdt.flatten()
-	print s
-	conccurentQueries = [["this assignment", 6, 1],["was fun", 6, 2]]
+	crdt.delete(2,2)
+	# s = crdt.flatten()
+	# print s
+	conccurentQueries = [["this assignment", 2, 1],["was fun", 2, 2]]
 	crdt.conccurentInsert(conccurentQueries)
 	s = crdt.flatten()
 	print s
