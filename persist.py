@@ -1,17 +1,25 @@
 import psycopg2
-
-def persist(atomIds, atomValues):
+def persist(data):
+	deleted = data[0]
+	nondeleted = data[1]
 	with psycopg2.connect(database="postgres", user="postgres", password="") as conn:
 	    with conn.cursor() as cur:
 	        conn.autocommit = True   
-	        cur.execute("DROP TABLE IF EXISTS treedoc;")
 	        cur.execute(
-	        	"CREATE TABLE treedoc( UID VARCHAR(10000) PRIMARY KEY,atom_value VARCHAR (255) NOT NULL);"
+	        	"CREATE TABLE IF NOT EXISTS treedoc( UID VARCHAR(10000) PRIMARY KEY,atom_value VARCHAR (255) NOT NULL);"
 	        	)
-	        for i in range(len(atomIds)):
-		        cmd = "INSERT INTO treedoc (UID, atom_value) VALUES ("
-		        cmd += "'"+str(atomIds[i])+"', '"+str(atomValues[i])
-		        cmd +="');"
+	        for i in deleted:
+	        	atomid = i
+	        	cmd = "DELETE FROM treedoc WHERE uid = '" + str(atomid)+"';"
+	        	cur.execute(cmd) 
+	        for i in nondeleted:
+		        atomid, atomvalue = i
+		        cmd = "SELECT * FROM treedoc WHERE treedoc.UID = '"+str(atomid)+"';"
+		        cur.execute(cmd)
+		        res = cur.fetchall()
+		        if(len(res) > 0):
+		        	continue
+		        cmd = "INSERT INTO treedoc (UID, atom_value) VALUES ('"+str(atomid)+"', '"+str(atomvalue)+"');"
 		        print cmd
 	     	        cur.execute(cmd)
 def retrieve():
@@ -26,6 +34,5 @@ def retrieve():
 	      		uids.append(i[0])
 	      		values.append(i[1])
 	      	return uids, values
-		     	        
-persist(["10011","101001"],["hi", "how are you"])
-print retrieve()
+
+persist((['1', '10', '100', '11', '110'], [['100121', 'how are you'], ['11101', 'hi']]))
