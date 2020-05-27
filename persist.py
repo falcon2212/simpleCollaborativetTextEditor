@@ -20,7 +20,6 @@ def persist(data):
 		        if(len(res) > 0):
 		        	continue
 		        cmd = "INSERT INTO treedoc (UID, atom_value) VALUES ('"+str(atomid)+"', '"+str(atomvalue)+"');"
-		        print cmd
 	     	        cur.execute(cmd)
 def retrieve():
 	with psycopg2.connect(database="postgres", user="postgres", password="") as conn:
@@ -34,5 +33,3 @@ def retrieve():
 	      		uids.append(i[0])
 	      		values.append(i[1])
 	      	return uids, values
-
-persist((['1', '10', '100', '11', '110'], [['100121', 'how are you'], ['11101', 'hi']]))

@@ -1,5 +1,6 @@
 import psycopg2
 from treedoc import *
+from persist import persist
 class CRDT():
 	def __init__(self):
 		self.treedoc = Node("")
@@ -59,20 +60,38 @@ class CRDT():
 			self.queryDict[i[0]]["delete"]=[]
 		for i in self.queryList:
 			self.queryDict[i[0]][i[1]].append(i[2])	
-		for ii in self.queryList:
-			i = ii[0]
+		l = self.queryDict.keys()
+		l.sort()	
+		for i in l:
 			q = [self.queryDict[i]["insert"],self.queryDict[i]["delete"]]
 			self.treedoc.conccurentOperations(q[0], q[1])	
-		
 		self.latestQueryNumber = self.queryNumber
 		return self.treedoc.flatten()		
-			
+	def saveDocument(self):
+		data = getDataFromCRDT(self.treedoc)
+		persist(data)
+		del self.treedoc	
+	def retrieveDocument(self):
+		data = retrieve()
+		self.treedoc = reconstruct(data[0],data[1])		
 if __name__ == "__main__":
         crdt = CRDT()	
         crdt.insert("a", 1, 1, '2011-05-16 15:36:38')		
         crdt.insert("b", 1, 2, '2011-05-16 15:36:38')
         crdt.insert("c", 1, 1, '2011-05-16 15:37:38')		
-        crdt.insert("d", 1, 2, '2011-05-16 15:37:38')		
-        crdt.delete( 1, 2, '2011-05-16 15:37:38')		
-        crdt.delete( 2, 2, '2011-05-16 15:39:38')		
         print crdt.getdocument()
+        crdt.insert("d", 1, 2, '2011-05-16 15:37:38')		
+        crdt.delete( 1, 2, '2011-05-16 15:37:38')	
+        print crdt.getdocument()	
+        crdt.insert("e", 1, 2, '2011-05-16 15:37:38')		
+        crdt.delete( 1, 2, '2011-05-16 15:37:38')		
+        print crdt.getdocument()	
+        crdt.insert("f", 1, 2, '2011-05-16 15:37:38')		
+        crdt.insert("g", 1, 2, '2011-05-16 15:37:38')		
+        crdt.insert("h", 1, 2, '2011-05-16 15:37:38')		
+        crdt.delete( 3, 2, '2011-05-16 15:39:38')		
+        print crdt.getdocument()
+        crdt.saveDocument()
+        crdt.retrieveDocument()
+        print crdt.getdocument()
+        

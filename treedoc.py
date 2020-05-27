@@ -47,15 +47,15 @@ class Node():
 				ra = node
 			else:
 				ra = ra.right
-				while(ra.left != None):
-					ra = ra.left
+				while(ra.right != None):
+					ra = ra.right
 			la = node
 			if(la.left == None):
 				la = node
 			else:
 				la = la.left
-				while(la.right != None):
-					la = la.right
+				while(la.left != None):
+					la = la.left
 			node.ra = ra
 			node.la = la
 			return node
@@ -153,14 +153,14 @@ class Node():
 					ff = ff.ra
 					for j in l[1:]:
 						S, pos, atom = j
-						ff.right = Node(atom)
-						ff.right.parent = ff
+						ff.left = Node(atom)
+						ff.left.parent = ff
 						ff.size+=1
 						par = ff.parent
 						while( par != None ):
 							par.size+=1
 							par = par.parent
-						ff= ff.right
+						ff= ff.left
 					ff.counter+=1	
 				elif(ancestor(f, b)):
 					bb = b.ra
@@ -187,63 +187,7 @@ class Node():
 							par.size+=1
 							par = par.parent
 						bb = bb.right
-					bb.counter+=1					
-	def insert(self, atom, insertPos, siteId):
-		if(atom == ""):
-			return -1
-		child = None
-		if(insertPos == 1):
-			f = self.query(insertPos, self)
-			f = f.la
-			f.left = Node(atom)
-			child = f.left
-			child.parent = f
-			f.counter += 1
-		elif(insertPos >= self.size):
-			f = self.query(self.size, self)		
-			f = f.ra
-			f.right = Node(atom)
-			child = f.right
-			child.parent = f
-			f.counter += 1
-		else:
-			b = None
-			b = self.query(insertPos-1, self)
-			f = self.query(insertPos, self)
-			if(ancestor(b,f)):
-				f = f.la
-				f.left = Node(atom)
-				child = f.left
-				child.parent = f
-				f.counter+=1
-			elif(ancestor(f,b)):
-				b = b.ra
-				b.right = Node(atom)
-				child = b.right
-				child.parent = b
-				b.counter+=1
-			else:
-				b = b.ra
-				b.right = Node(atom)
-				child = b.right
-				child.parent = b
-				b.counter+=1
-		par = child.parent
-		while( par != None):
-			par.size+=1
-			par = par.parent
-		
-	def delete(self, pos, siteId):
-		if(self.size == 0):
-			return
-		node = self.query(pos, self)
-		node.value = ""
-		node.size -= 1
-		par = node.parent
-		while( par != None ):
-			par.size-=1
-			par = par.parent
-
+					bb.counter+=1	
 	def flatten(self):
 		ans = [""]
 		def util(node, ans):
@@ -333,14 +277,6 @@ def reconstruct(atomIds, atomValues):
 					par.right.parent = par
 	return root			
 
-'''
-
-These are the things left to do :
-
-create a wraper function to process queries 
-use flask to make an rest api
-
-'''
 def main():
 	crdt = Node("")
 	crdt.insert("a",1,1)
