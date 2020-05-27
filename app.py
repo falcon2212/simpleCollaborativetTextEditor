@@ -46,7 +46,7 @@ class CRDT():
 			for i in l:
 				tblid, timestamp, typ, atom, pos, siteid = i
 				self.queryList.append([timestamp, typ, [atom, pos, siteid]])		
-			cmd = "SELECT * FROM delete_query_db;"
+			cmd = "SELECT * FROM delete_query_db WHERE id >"+str(self.latestQueryNumber)+";"
 			cur.execute(cmd)
 			l1 = cur.fetchall()
 			for i in l1:
