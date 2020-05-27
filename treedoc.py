@@ -237,7 +237,6 @@ class Node():
 		if(self.size == 0):
 			return
 		node = self.query(pos, self)
-		print node.value, pos, self.size
 		node.value = ""
 		node.size -= 1
 		par = node.parent
@@ -359,7 +358,7 @@ def main():
 	print crdt.flatten(),crdt.size
 	print getDataFromCRDT(crdt)
 	ncrdt = reconstruct(['1101', '1001'], ['hi', 'how are you'])
-	# print ncrdt.flatten()
-	# print getDataFromCRDT(ncrdt)
-	# print retrieve()
-main()
+	print ncrdt.flatten()
+	print getDataFromCRDT(ncrdt)
+	print retrieve()
+# main()
