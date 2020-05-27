@@ -61,36 +61,6 @@ class CRDT():
 			self.queryDict[i[0]][i[1]].append(i[2])	
 		for ii in self.queryList:
 			i = ii[0]
-			visited = dict()
-			pi1 = dict()
-			pi2 = dict()
-			dependencies = []
-			for j in self.queryDict[i]['insert']:
-				visited[(j[1],j[2])] = 0
-			for j in self.queryDict[i]["delete"]:
-				visited[(j[0],j[1])] = 0
-			for j in range(len(self.queryDict[i]["insert"])):
-				k = self.queryDict[i]["insert"][j]
-				visited[(k[1],k[2])] = 1
-				pi1[(k[1],k[2])] = j
-			for j in range(len(self.queryDict[i]["delete"])):
-				k = self.queryDict[i]["delete"][j]
-				visited[(k[0],k[1])] += 1
-				pi2[(k[0],k[1])] = j
-			ins = []
-			for j in self.queryDict[i]["insert"]:
-				if(visited[(j[1],j[2])] >= 2):
-					continue
-				else:
-					ins.append(j)	
-			dele = []
-			for j in self.queryDict[i]["delete"]:
-				if(visited[(j[0],j[1])] >= 2):
-					continue
-				else:
-					dele.append(j)	
-			self.queryDict[i]["insert"] = ins
-			self.queryDict[i]["delete"] = dele
 			q = [self.queryDict[i]["insert"],self.queryDict[i]["delete"]]
 			self.treedoc.conccurentOperations(q[0], q[1])	
 		
