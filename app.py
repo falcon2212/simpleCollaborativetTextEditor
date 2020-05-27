@@ -5,6 +5,7 @@ class CRDT():
 		self.treedoc = Node("")
 		self.queryList = []
 		self.queryNumber = 0
+		self.latestQueryNumber = 0
 		with psycopg2.connect(database="postgres", user="postgres", password="") as conn:
 		    with conn.cursor() as cur:
 		        conn.autocommit = True   
@@ -39,7 +40,7 @@ class CRDT():
 		with psycopg2.connect(database="postgres", user="postgres", password="") as conn:
 		    with conn.cursor() as cur:
 		        conn.autocommit = True   
-			cmd = "SELECT * FROM insert_query_db;"
+			cmd = "SELECT * FROM insert_query_db WHERE id >"+str(self.latestQueryNumber)+";"
 			cur.execute(cmd)
 			l = cur.fetchall()
 			for i in l:
@@ -58,7 +59,8 @@ class CRDT():
 			self.queryDict[i[0]]["delete"]=[]
 		for i in self.queryList:
 			self.queryDict[i[0]][i[1]].append(i[2])	
-		for i in self.queryDict:
+		for ii in self.queryList:
+			i = ii[0]
 			visited = dict()
 			pi1 = dict()
 			pi2 = dict()
@@ -89,17 +91,18 @@ class CRDT():
 					dele.append(j)	
 			self.queryDict[i]["insert"] = ins
 			self.queryDict[i]["delete"] = dele
-			q = [self.queryDict[i]["insert"],self.queryDict[i]["delete"]]		
+			q = [self.queryDict[i]["insert"],self.queryDict[i]["delete"]]
 			self.treedoc.conccurentOperations(q[0], q[1])	
 		
+		self.latestQueryNumber = self.queryNumber
 		return self.treedoc.flatten()		
 			
 if __name__ == "__main__":
         crdt = CRDT()	
         crdt.insert("a", 1, 1, '2011-05-16 15:36:38')		
-        crdt.insert("b", 1, 2, '2011-05-16 15:36:38')		
+        crdt.insert("b", 1, 2, '2011-05-16 15:36:38')
         crdt.insert("c", 1, 1, '2011-05-16 15:37:38')		
         crdt.insert("d", 1, 2, '2011-05-16 15:37:38')		
-        crdt.delete( 1, 2, '2011-05-16 15:39:38')		
+        crdt.delete( 1, 2, '2011-05-16 15:37:38')		
         crdt.delete( 2, 2, '2011-05-16 15:39:38')		
         print crdt.getdocument()
