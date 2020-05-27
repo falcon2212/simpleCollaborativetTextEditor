@@ -22,65 +22,87 @@ class Node():
 			self.size = 0
 
 	#returns node corresponding to the character at nth position in crdt	
-	def query(self, n):
-		if(self.size == 0):
-			return self
-		if(n > self.size):
+	def query(self, n, node):
+		if(node.size == 0):
+			return node
+		if(n > node.size):
 			return None
-		def util(node, k, pos, ans):
-			if(node.left != None):
-				j = node.left
-				util(j, k, pos, ans)
-				if(len(ans) > 0):
-					return
-			if(len(node.value) > 0):
-				k[0]+=1
-			if(pos[0] == k[0]):
-				ans.append(node)
-				return
-			if(node.right != None):
-				j = node.right
-				util(j, k, pos, ans)
-				if(len(ans) > 0):
-					return
-		pos = [n]
-		k = [0]
-		ans = []
-		util(self, k, pos, ans)	
-		ra = ans[0]
-		if(ra.right == None):
-			ra = ans[0]
+		sl = 0
+		sr = 0
+		ss = 0
+		if(node.value != ""):
+			ss+=1
+		if(node.left != None):
+			sl = node.left.size
+		if(node.right != None):
+			sr = node.right.size			
+		if(ss == 0):
+			if(sl >= n):
+				return self.query(n, node.left)
+			else:
+				return self.query(n-sl, node.right)	
+		if(sl + 1 == n):
+			ra = node
+			if(ra.right == None):
+				ra = node
+			else:
+				ra = ra.right
+				while(ra.left != None):
+					ra = ra.left
+			la = node
+			if(la.left == None):
+				la = node
+			else:
+				la = la.left
+				while(la.right != None):
+					la = la.right
+			node.ra = ra
+			node.la = la
+			return node
+		elif(sl + 1 < n):
+			return self.query(n-sl-1, node.right)
 		else:
-			ra = ra.right
-			while(ra.left != None):
-				ra = ra.left
-		la = ans[0]
-		if(la.left == None):
-			la = ans[0]
-		else:
-			la = la.left
-			while(la.right != None):
-				la = la.right
-		ans[0].ra = ra
-		ans[0].la = la
-		return ans[0]
-
+			return self.query(n, node.left)
 					
-	def conccurentInsert(self, queries):
+	def conccurentOperations(self, insertQueries, deleteQueries):
+		d1 = dict()
+		for i in deleteQueries:
+			pos, siteId = i
+			d1[pos]=[]
+		positions1 = dict()
+		for i in deleteQueries:
+			pos, siteId = i
+			d1[pos].append(i)
+			positions1[pos] = self.query(pos, self)
+
 		d = dict()
-		for i in queries:
+		for i in insertQueries:
 			atom, pos, siteId = i
 			d[pos]=[]
 		positions = dict()
-		for i in queries:
+		for i in insertQueries:
 			atom, pos, siteId = i
 			d[pos].append(i)
 			if(pos == 1 or pos == self.size):
-				positions[pos] = [self.query(pos)]
+				positions[pos] = [self.query(pos, self)]
 			else:
-				positions[pos] = [self.query(pos-1),self.query(pos)]	
+				positions[pos] = [self.query(pos-1, self),self.query(pos, self)]	
 		cnt1 = 0
 		prevSize = self.size
+
+		#DELETE
+		for i in positions1:
+			if(self.size == 0):
+				break
+			node = positions1[i]
+			node.value = ""
+			node.size -= 1
+			par = node.parent
+			while( par != None ):
+				par.size-=1
+				par = par.parent
+
+		#INSERT		
 		for i in d:
 			l = []
 			for j in d[i]:
@@ -171,14 +193,14 @@ class Node():
 			return -1
 		child = None
 		if(insertPos == 1):
-			f = self.query(insertPos)
+			f = self.query(insertPos, self)
 			f = f.la
 			f.left = Node(atom)
 			child = f.left
 			child.parent = f
 			f.counter += 1
 		elif(insertPos >= self.size):
-			f = self.query(self.size)		
+			f = self.query(self.size, self)		
 			f = f.ra
 			f.right = Node(atom)
 			child = f.right
@@ -186,8 +208,8 @@ class Node():
 			f.counter += 1
 		else:
 			b = None
-			b = self.query(insertPos-1)
-			f = self.query(insertPos)
+			b = self.query(insertPos-1, self)
+			f = self.query(insertPos, self)
 			if(ancestor(b,f)):
 				f = f.la
 				f.left = Node(atom)
@@ -212,8 +234,10 @@ class Node():
 			par = par.parent
 		
 	def delete(self, pos, siteId):
-
-		node = self.query(pos)
+		if(self.size == 0):
+			return
+		node = self.query(pos, self)
+		print node.value, pos, self.size
 		node.value = ""
 		node.size -= 1
 		par = node.parent
@@ -221,25 +245,6 @@ class Node():
 			par.size-=1
 			par = par.parent
 
-	def conccurentDeletes(self, queries):
-		d = dict()
-		for i in queries:
-			pos, siteId = i
-			d[pos]=[]
-		positions = dict()
-		for i in queries:
-			pos, siteId = i
-			d[pos].append(i)
-			positions[pos] = self.query(pos)
-		for i in positions:
-			node = positions[i]
-			node.value = ""
-			node.size -= 1
-			par = node.parent
-			while( par != None ):
-				par.size-=1
-				par = par.parent
-				
 	def flatten(self):
 		ans = [""]
 		def util(node, ans):
@@ -339,24 +344,22 @@ use flask to make an rest api
 '''
 def main():
 	crdt = Node("")
-	crdt.insert("hi",1,1)
-	crdt.insert("!",2,2)
-	crdt.insert("how are you",3,1)
-	crdt.insert("how are you ",3,2)
+	crdt.insert("a",1,1)
+	crdt.insert("b",2,2)
+	crdt.insert("c",3,1)
+	crdt.insert("d",4,2)
 	crdt.delete(4,2)
-	conccurentQueries = [["this assignment ", 3, 1],["was fun\n", 3, 2],[" this is khalid, ",2,1], [" this is khalid, ",2,2]]
-	crdt.conccurentInsert(conccurentQueries)
-	conccurentQueries = [[3,2],[3,1],[4,1]]
-	crdt.conccurentDeletes(conccurentQueries)
-	# crdt.delete(3,2)
-	# crdt.delete(3,2)
-	crdt.insert("\nBut not as easy\n", crdt.size,1)
-	crdt.insert(", ",4, 1)
-	crdt.insert("Since It has been a whlie\n",crdt.size, 2)
-	crdt.insert("Since I coded in python\n",crdt.size, 1)
-	print crdt.flatten()
+	conccurentQueries = [["d", 3, 1],["e", 3, 2],["f",2,1], ["g",2,2]]
+	conccurentQueries1 = [[3,2],[1,1]]
+	crdt.conccurentOperations(conccurentQueries,conccurentQueries1)
+	crdt.insert("h", crdt.size,1)
+	crdt.insert("i",4, 1)
+	crdt.insert("j",crdt.size, 2)
+	crdt.insert("k",crdt.size, 1)
+	print crdt.flatten(),crdt.size
+	print getDataFromCRDT(crdt)
 	ncrdt = reconstruct(['1101', '1001'], ['hi', 'how are you'])
-	print ncrdt.flatten()
-	print getDataFromCRDT(ncrdt)
-	print retrieve()
+	# print ncrdt.flatten()
+	# print getDataFromCRDT(ncrdt)
+	# print retrieve()
 main()
