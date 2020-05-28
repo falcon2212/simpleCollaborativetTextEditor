@@ -25,6 +25,7 @@ def retrieve():
 	with psycopg2.connect(database="postgres", user="postgres", password="") as conn:
 	    with conn.cursor() as cur:
 	        conn.autocommit = True   
+	        cur.execute("CREATE TABLE IF NOT EXISTS treedoc( UID VARCHAR(10000) PRIMARY KEY,atom_value VARCHAR (255) NOT NULL);")
 	        cur.execute("SELECT * FROM treedoc;")
 	      	records = cur.fetchall()
 	      	uids = []
