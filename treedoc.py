@@ -2,65 +2,63 @@ from math import *
 from copy import *
 from persist import persist, retrieve
 from util import dfs, ancestor
-# from flask import Flask, request
-# from flask_restful import Resource, Api
-# app = Flask(__name__)
-# api = Api(app)
 
 
 class Node():
-	def __init__(self, data):
+	def __init__(self, data, root1 = True):
 		self.value = data
-		self.left = None
-		self.right = None
-		self.counter = 0
-		self.size = 1
-		self.parent = None
-		self.la = self
-		self.ra = self
+		self.left = None 						#stores left child
+		self.right = None						#stores left child
+		self.size = 1							#stores size of the subtree rooted here
+		self.parent = None						#stores parent node
+		self.la = self							#stores left desendent whose left child's uid is immediatley smaller to this node's uid
+		self.ra = self							#stores right desendent whose right child's uid is immediatley greater to this node's uid
+		self.root = False						#stores if the current node is root of treedoc or not
 		if(data == ""):
-			self.size = 0
-
-	#returns node corresponding to the character at nth position in crdt	
+			self.root = root1
 	def query(self, n, node):
 		if(node.size == 0):
 			return node
 		if(n > node.size):
 			return None
-		sl = 0
-		sr = 0
-		ss = 0
-		if(node.value != ""):
-			ss+=1
+		sizel = 0
+		sizer = 0
+		sizen = 1
+		if(node.value == "" and not node.root):
+			sizen-=1
 		if(node.left != None):
-			sl = node.left.size
+			sizel = node.left.size
 		if(node.right != None):
-			sr = node.right.size			
-		if(ss == 0):
-			if(sl >= n):
+			sizer = node.right.size			
+		if(sizen == 0):
+			if(sizel >= n):
 				return self.query(n, node.left)
 			else:
-				return self.query(n-sl, node.right)	
-		if(sl + 1 == n):
+				return self.query(n-sizel, node.right)	
+		if(sizel + 1 == n):
 			ra = node
 			if(ra.right == None):
 				ra = node
-			else:
+			else:	
 				ra = ra.right
-				while(ra.right != None):
+				while(ra.right != None and ra.right.value == ""):
 					ra = ra.right
+			if(ra.right != None and ra.right.value != ""):
+				ra = None
 			la = node
 			if(la.left == None):
 				la = node
 			else:
 				la = la.left
-				while(la.left != None):
+				while(la.left != None and la.left.value == ""):
 					la = la.left
+			if(la.left != None and la.left.value != ""):
+				la = None		
 			node.ra = ra
 			node.la = la
 			return node
-		elif(sl + 1 < n):
-			return self.query(n-sl-1, node.right)
+		elif(sizel + 1 < n):
+			return self.query(n-sizel-1, node.right)
 		else:
 			return self.query(n, node.left)
 					
@@ -68,10 +66,12 @@ class Node():
 		d1 = dict()
 		for i in deleteQueries:
 			pos, siteId = i
+			pos+=1
 			d1[pos]=[]
 		positions1 = dict()
 		for i in deleteQueries:
 			pos, siteId = i
+			pos+=1
 			d1[pos].append(i)
 			positions1[pos] = self.query(pos, self)
 
@@ -83,11 +83,10 @@ class Node():
 		for i in insertQueries:
 			atom, pos, siteId = i
 			d[pos].append(i)
-			if(pos == 1 or pos == self.size):
+			if(pos == self.size):
 				positions[pos] = [self.query(pos, self)]
 			else:
-				positions[pos] = [self.query(pos-1, self),self.query(pos, self)]	
-		cnt1 = 0
+				positions[pos] = [self.query(pos, self),self.query(pos+1, self)]	
 		prevSize = self.size
 
 		#DELETE
@@ -96,7 +95,8 @@ class Node():
 				break
 			node = positions1[i]
 			node.value = ""
-			node.size -= 1
+			if(not node.root):
+				node.size -= 1
 			par = node.parent
 			while( par != None ):
 				par.size-=1
@@ -109,8 +109,7 @@ class Node():
 				atom, pos, S = j
 				l.append((S, pos, atom))
 			l.sort()
-			cnt = 0;
-			if(i == 1):
+			if(i == prevSize):
 				b = positions[i][0].ra
 				for j in l:
 					S, pos, atom = j
@@ -122,20 +121,6 @@ class Node():
 						par.size+=1
 						par = par.parent
 					b = b.right
-				b.counter+=1	
-			elif(i == prevSize):
-				b = positions[i][0].ra
-				for j in l:
-					S, pos, atom = j
-					b.right = Node(atom)
-					b.right.parent = b
-					b.size+=1
-					par = b.parent
-					while( par != None ):
-						par.size+=1
-						par = par.parent
-					b = b.right
-				b.counter+=1	
 			else:
 				b = positions[i][0]
 				f = positions[i][1]
@@ -153,28 +138,14 @@ class Node():
 					ff = ff.ra
 					for j in l[1:]:
 						S, pos, atom = j
-						ff.left = Node(atom)
-						ff.left.parent = ff
+						ff.right = Node(atom)
+						ff.right.parent = ff
 						ff.size+=1
 						par = ff.parent
 						while( par != None ):
 							par.size+=1
 							par = par.parent
-						ff= ff.left
-					ff.counter+=1	
-				elif(ancestor(f, b)):
-					bb = b.ra
-					for j in l:
-						S, pos, atom = j
-						bb.right = Node(atom)
-						bb.right.parent = bb
-						bb.size+=1
-						par = bb.parent
-						while( par != None ):
-							par.size+=1
-							par = par.parent
-						bb = bb.right
-					bb.counter+=1
+						ff= ff.right
 				else:
 					bb = b.ra
 					for j in l:
@@ -187,7 +158,6 @@ class Node():
 							par.size+=1
 							par = par.parent
 						bb = bb.right
-					bb.counter+=1	
 	def flatten(self):
 		ans = [""]
 		def util(node, ans):
@@ -206,7 +176,7 @@ class Node():
 			if(h == 1):
 				return Node("")
 			else:
-				node = Node("")
+				node = Node("", False)
 				node.left = allocate(h-1)
 				node.left.parent = node	
 				node.right = allocate(h-1)
@@ -227,12 +197,13 @@ class Node():
 		fill(self, atomstring, ptr)
 		dfs(self)
 
+#This function returns the uids of deleted and uids,values of undeleted nodes
 def getDataFromCRDT(crdt):
 	deleted = []
 	nondeleted = []
 	uid = ""
 	def util(node, uid):
-		if(node.value == "" and len(uid) > 0):
+		if(node.value == "" and not node.root):
 			deleted.append(uid)
 		elif(node.value != ""):
 			nondeleted.append([uid, node.value])	
@@ -243,6 +214,7 @@ def getDataFromCRDT(crdt):
 	util(crdt, uid)
 	return (deleted, nondeleted) 		
 
+#This function reconstructs the treedoc from uids, atomvalues
 def reconstruct(atomIds, atomValues):
 	root = Node("")
 	for i in range(len(atomIds)):
@@ -253,12 +225,12 @@ def reconstruct(atomIds, atomValues):
 		while j < len(atomid)-1 :
 			if(atomid[j] == '0'):
 				if(par.left == None):
-					par.left = Node("")
+					par.left = Node("", False)
 					par.left.parent = par
 				par = par.left
 			else:
 				if(par.right == None):
-					par.right = Node("")
+					par.right = Node("",False)
 					par.right.parent = par
 				par = par.right
 			j+=1
@@ -276,25 +248,3 @@ def reconstruct(atomIds, atomValues):
 					par.right = Node(atomvalue)
 					par.right.parent = par
 	return root			
-
-def main():
-	crdt = Node("")
-	crdt.insert("a",1,1)
-	crdt.insert("b",2,2)
-	crdt.insert("c",3,1)
-	crdt.insert("d",4,2)
-	crdt.delete(4,2)
-	conccurentQueries = [["d", 3, 1],["e", 3, 2],["f",2,1], ["g",2,2]]
-	conccurentQueries1 = [[3,2],[1,1]]
-	crdt.conccurentOperations(conccurentQueries,conccurentQueries1)
-	crdt.insert("h", crdt.size,1)
-	crdt.insert("i",4, 1)
-	crdt.insert("j",crdt.size, 2)
-	crdt.insert("k",crdt.size, 1)
-	print crdt.flatten(),crdt.size
-	print getDataFromCRDT(crdt)
-	ncrdt = reconstruct(['1101', '1001'], ['hi', 'how are you'])
-	print ncrdt.flatten()
-	print getDataFromCRDT(ncrdt)
-	print retrieve()
-# main()
