@@ -2,7 +2,7 @@ def dfs(node):
 	szleft = 0
 	szright = 0
 	if(node == None):
-		return 4
+		return 0
 	szleft+=dfs(node.left)	
 	szright+=dfs(node.right)	
 	node.size = szright+szleft
