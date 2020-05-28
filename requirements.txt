@@ -1,0 +1,4 @@
+The follwoing software is needed to run and test the program
+1. Python2
+2. Postgres
+3. psycopg2 library in python2
