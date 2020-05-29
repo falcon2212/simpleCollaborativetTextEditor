@@ -6,6 +6,13 @@ This is a simple program to simulate the working of collaborative text edtior.
 
 How to test the program:
 
-$sudo -u postgres app.py
+-> You have to provide your queries in the main function of app.py.
+-> Insert Queries look like (atom, positionToBeInserted, siteId, timestamp).
+-> Delete Queries look like (positionToBeInserted, siteId, timestamp).
+-> Use getdocument function in CRDT class to get the document as a string.
+-> Use saveDocument function in CRDT class to save the treedoc in the database.
+-> Use retrieveDocument function in CRDT class to retrieve treedoc from the database.
+-> The command to run the program is: 
+		$sudo -u postgres app.py.
 
-NOTE: If you want to run a fresh instance then you have to clear the data base first and then try to run the code.
+
